@@ -953,7 +953,104 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* ─── RESPONSIVE — TABLET ─── */
+  /* ─── INSTRUMENT FILTER BAR ─── */
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .filter-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .filter-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 32px 8px 14px;
+    border-radius: 50px;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b8aaa' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+
+  .filter-select:hover, .filter-select:focus {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .filter-select.active-filter {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background-color: var(--cyan-dim);
+    box-shadow: 0 0 12px rgba(0,212,255,0.1);
+  }
+
+  .filter-all-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 18px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .filter-all-btn:hover, .filter-all-btn.active {
+    background: var(--gold-dim);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  .filter-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--cyan-dim);
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 50px;
+    letter-spacing: 0.5px;
+  }
+
+  .filter-chip-close {
+    cursor: pointer;
+    opacity: 0.7;
+    font-size: 13px;
+    line-height: 1;
+    transition: opacity 0.15s;
+  }
+  .filter-chip-close:hover { opacity: 1; }
+
+  @media (max-width: 600px) {
+    .filter-bar { gap: 6px; }
+    .filter-select { font-size: 12px; padding: 7px 28px 7px 12px; }
+    .filter-all-btn { font-size: 12px; padding: 7px 14px; }
+  }
   @media (max-width: 900px) {
     .stats-strip { grid-template-columns: repeat(3, 1fr); }
     .dashboard-grid { grid-template-columns: 1fr; }
@@ -1201,6 +1298,27 @@
   <div class="mode-banner" id="modeBanner">
     <div class="live-dot"></div>
     LIVE TRADING MODE — Real money on the line. Trade with discipline.
+  </div>
+
+  <!-- INSTRUMENT FILTER BAR -->
+  <div class="filter-bar" id="filterBar">
+    <button class="filter-all-btn active" id="filterAllBtn" onclick="setFilterAll()">⚡ All</button>
+    <select class="filter-select" id="filterAssetClass" onchange="onFilterAssetChange()">
+      <option value="">Asset Class ▾</option>
+      <option value="Futures">📊 Futures</option>
+      <option value="Crypto">₿ Crypto</option>
+      <option value="Stocks">🏢 Stocks</option>
+      <option value="Options">📋 Options</option>
+      <option value="Forex">💱 Forex</option>
+      <option value="Commodities">🥇 Commodities</option>
+    </select>
+    <select class="filter-select" id="filterInstrument" onchange="onFilterInstrumentChange()" style="display:none">
+      <option value="">All Instruments</option>
+    </select>
+    <div id="filterChip" style="display:none" class="filter-chip">
+      <span id="filterChipLabel"></span>
+      <span class="filter-chip-close" onclick="setFilterAll()">✕</span>
+    </div>
   </div>
 
   <!-- STATS STRIP -->
@@ -1607,6 +1725,8 @@ let currentStep = 1;
 let formData = {};
 let editIndex = -1; // -1 = new trade, >=0 = editing existing
 let currentMode = 'paper'; // 'paper' | 'live'  — loaded from Firestore on sign-in
+let filterAssetClass = '';  // '' = all asset classes
+let filterInstrument = '';  // '' = all instruments
 
 // ─── MODE ────────────────────────────────────────────────────
 function setMode(mode) {
@@ -1629,10 +1749,88 @@ function setMode(mode) {
   // Re-render whichever secondary tab is active
   if (document.getElementById('sec-dashboard').classList.contains('active')) renderDashboard();
   if (document.getElementById('sec-notes').classList.contains('active')) renderNotes();
+  // Reset instrument filter when switching mode
+  setFilterAll();
 }
 
 function activeTrades() {
-  return trades.filter(t => (t.mode || 'paper') === currentMode);
+  return trades.filter(t => {
+    if ((t.mode || 'paper') !== currentMode) return false;
+    if (filterAssetClass && (t.assetClass || '') !== filterAssetClass) return false;
+    if (filterInstrument && (t.instrument || '') !== filterInstrument) return false;
+    return true;
+  });
+}
+
+// ─── INSTRUMENT FILTER ───────────────────────────────────────
+function refreshAll() {
+  renderTable();
+  renderStats();
+  if (document.getElementById('sec-dashboard').classList.contains('active')) renderDashboard();
+  if (document.getElementById('sec-notes').classList.contains('active')) renderNotes();
+}
+
+function setFilterAll() {
+  filterAssetClass = '';
+  filterInstrument = '';
+  document.getElementById('filterAssetClass').value = '';
+  document.getElementById('filterAssetClass').classList.remove('active-filter');
+  document.getElementById('filterInstrument').style.display = 'none';
+  document.getElementById('filterInstrument').value = '';
+  document.getElementById('filterInstrument').classList.remove('active-filter');
+  document.getElementById('filterAllBtn').classList.add('active');
+  document.getElementById('filterChip').style.display = 'none';
+  refreshAll();
+}
+
+function onFilterAssetChange() {
+  const val = document.getElementById('filterAssetClass').value;
+  filterAssetClass = val;
+  filterInstrument = '';
+
+  const assetSel = document.getElementById('filterAssetClass');
+  const instrSel = document.getElementById('filterInstrument');
+  const allBtn   = document.getElementById('filterAllBtn');
+
+  allBtn.classList.remove('active');
+  assetSel.classList.toggle('active-filter', !!val);
+
+  if (val && INSTRUMENTS[val]) {
+    // Populate instrument dropdown
+    instrSel.innerHTML = `<option value="">All ${val}</option>` +
+      INSTRUMENTS[val].map(i => `<option value="${i.label}">${i.icon} ${i.label}</option>`).join('');
+    instrSel.style.display = 'block';
+    instrSel.classList.remove('active-filter');
+  } else {
+    instrSel.style.display = 'none';
+    instrSel.classList.remove('active-filter');
+    if (!val) allBtn.classList.add('active');
+  }
+
+  updateFilterChip();
+  refreshAll();
+}
+
+function onFilterInstrumentChange() {
+  const val = document.getElementById('filterInstrument').value;
+  filterInstrument = val;
+  document.getElementById('filterInstrument').classList.toggle('active-filter', !!val);
+  updateFilterChip();
+  refreshAll();
+}
+
+function updateFilterChip() {
+  const chip  = document.getElementById('filterChip');
+  const label = document.getElementById('filterChipLabel');
+  if (filterInstrument) {
+    label.textContent = filterInstrument;
+    chip.style.display = 'flex';
+  } else if (filterAssetClass) {
+    label.textContent = filterAssetClass;
+    chip.style.display = 'flex';
+  } else {
+    chip.style.display = 'none';
+  }
 }
 
 // ─── TABS ────────────────────────────────────────────────────
