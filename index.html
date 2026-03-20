@@ -248,7 +248,20 @@
   table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 900px;
   }
+  thead th:last-child,
+  tbody td:last-child {
+    position: sticky;
+    right: 0;
+    background: var(--bg3);
+    z-index: 2;
+    border-left: 1px solid var(--border);
+    min-width: 90px;
+  }
+
+  tbody td:last-child { background: var(--surface); }
+  tbody tr:hover td:last-child { background: rgba(8,13,26,0.95); }
 
   thead th {
     font-family: 'JetBrains Mono', monospace;
@@ -821,6 +834,22 @@
   }
 
   .btn-submit:hover { box-shadow: 0 0 20px rgba(0,230,118,0.3); transform: translateY(-1px); }
+
+  .btn-save-now {
+    background: linear-gradient(135deg, var(--gold), #e67e00);
+    border: none;
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 11px 22px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-right: 8px;
+  }
+
+  .btn-save-now:hover { box-shadow: 0 0 20px rgba(245,197,66,0.4); transform: translateY(-1px); }
 
   /* ─── Toast ─── */
   .toast {
@@ -1708,6 +1737,7 @@
     <div class="modal-footer">
       <button class="btn-back" id="btnBack" onclick="prevStep()" style="display:none">← Back</button>
       <div style="flex:1"></div>
+      <button class="btn-save-now" id="btnSaveNow" onclick="saveNow()" style="display:none">💾 Save</button>
       <button class="btn-next" id="btnNext" onclick="nextStep()">Next →</button>
       <button class="btn-submit" id="btnSubmit" onclick="submitTrade()" style="display:none">Log Trade ✓</button>
     </div>
@@ -1951,20 +1981,65 @@ function getWeekNumber() {
 }
 
 function updateModalUI() {
-  // Show/hide steps
   for (let i = 1; i <= TOTAL_STEPS; i++) {
     document.getElementById('step' + i).classList.toggle('active', i === currentStep);
   }
-  // Progress
   document.getElementById('progressFill').style.width = (currentStep / TOTAL_STEPS * 100) + '%';
-  // Step indicator
   document.getElementById('stepIndicator').textContent = `Step ${currentStep} of ${TOTAL_STEPS}`;
-  // Back button
   document.getElementById('btnBack').style.display = currentStep > 1 ? 'inline-flex' : 'none';
-  // Next / Submit
-  const isLast = currentStep === TOTAL_STEPS;
-  document.getElementById('btnNext').style.display = isLast ? 'none' : 'inline-flex';
-  document.getElementById('btnSubmit').style.display = isLast ? 'inline-flex' : 'none';
+
+  const isLast  = currentStep === TOTAL_STEPS;
+  const isEdit  = editIndex >= 0;
+
+  // In edit mode: show "Save" on every step, hide "Next" on last step
+  document.getElementById('btnSaveNow').style.display = (isEdit && !isLast) ? 'inline-flex' : 'none';
+  document.getElementById('btnNext').style.display    = isLast ? 'none' : 'inline-flex';
+  document.getElementById('btnSubmit').style.display  = isLast ? 'inline-flex' : 'none';
+
+  // Rename submit button based on mode
+  document.getElementById('btnSubmit').textContent = isEdit ? 'Save Changes ✓' : 'Log Trade ✓';
+}
+
+// Save immediately from any step during edit
+function saveNow() {
+  // Collect whichever step we're currently on before saving
+  collectCurrentStep();
+  submitTrade();
+}
+
+function collectCurrentStep() {
+  if (currentStep === 1) {
+    const d = document.getElementById('inputDate').value;
+    if (d) { formData.date = d; }
+    formData.week = document.getElementById('inputWeek').value || formData.week;
+  }
+  if (currentStep === 2 && formData.assetClass) { /* already in formData via choose() */ }
+  if (currentStep === 3) {
+    const custom = document.getElementById('inputInstrumentCustom').value.trim();
+    if (custom) formData.instrument = custom;
+  }
+  if (currentStep === 4) { /* direction in formData */ }
+  if (currentStep === 5) {
+    const custom = document.getElementById('inputSetupCustom').value.trim();
+    if (custom) formData.setup = custom;
+  }
+  if (currentStep === 6) { /* session in formData */ }
+  if (currentStep === 7) { /* result in formData */ }
+  if (currentStep === 8) {
+    const pnlVal = document.getElementById('inputPnl').value;
+    if (pnlVal !== '') formData.pnl = parseFloat(pnlVal) || 0;
+    formData.entry     = document.getElementById('inputEntry').value || formData.entry;
+    formData.exit      = document.getElementById('inputExit').value  || formData.exit;
+    formData.contracts = parseInt(document.getElementById('inputContracts').value) || formData.contracts || 1;
+  }
+  if (currentStep === 9) {
+    formData.notes = document.getElementById('inputNotes').value.trim();
+  }
+  if (currentStep === 10) {
+    formData.observations = document.getElementById('inputObservations').value.trim();
+    formData.mistakes     = document.getElementById('inputMistakes').value.trim();
+    formData.focus        = document.getElementById('inputFocus').value.trim();
+  }
 }
 
 function choose(field, value, btn) {
