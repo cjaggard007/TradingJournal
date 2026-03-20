@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Journal — Micro S&P 500</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080d1a;
+    --bg2: #0d1526;
+    --bg3: #111c30;
+    --surface: #0f1d35;
+    --surface2: #162440;
+    --border: #1e3050;
+    --border2: #243a5e;
+    --cyan: #00d4ff;
+    --cyan-dim: rgba(0,212,255,0.15);
+    --cyan-glow: rgba(0,212,255,0.3);
+    --gold: #f5c542;
+    --gold-dim: rgba(245,197,66,0.15);
+    --green: #00e676;
+    --green-dim: rgba(0,230,118,0.12);
+    --red: #ff4d6d;
+    --red-dim: rgba(255,77,109,0.12);
+    --text: #e8f4f8;
+    --text-dim: #6b8aaa;
+    --text-muted: #3d5a7a;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .header-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--cyan), #0077ff);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 0 24px var(--cyan-glow);
+  }
+
+  header h1 {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  header h1 span {
+    color: var(--cyan);
+  }
+
+  .header-subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .tab-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 18px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+
+  .tab-btn:hover, .tab-btn.active {
+    background: var(--cyan-dim);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  /* ─── STATS STRIP ─── */
+  .stats-strip {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    transition: border-color 0.2s;
+  }
+
+  .stat-card:hover { border-color: var(--border2); }
+
+  .stat-card.highlight {
+    border-color: var(--cyan);
+    background: linear-gradient(135deg, var(--surface), rgba(0,212,255,0.05));
+    box-shadow: 0 0 20px rgba(0,212,255,0.08);
+  }
+
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .stat-value.pos { color: var(--green); }
+  .stat-value.neg { color: var(--red); }
+  .stat-value.cyan { color: var(--cyan); }
+  .stat-value.gold { color: var(--gold); }
+  .stat-value.white { color: var(--text); }
+
+  /* ─── SECTIONS ─── */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ─── TABLE ─── */
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .table-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .table-title::before {
+    content: '';
+    width: 3px;
+    height: 16px;
+    background: var(--cyan);
+    border-radius: 2px;
+    box-shadow: 0 0 8px var(--cyan);
+  }
+
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    background: var(--bg3);
+    padding: 14px 16px;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+  }
+
+  thead th:last-child { text-align: right; }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(30,48,80,0.5);
+    transition: background 0.15s;
+    animation: rowIn 0.3s ease;
+  }
+
+  @keyframes rowIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  tbody tr:hover { background: rgba(0,212,255,0.03); }
+  tbody tr:last-child { border-bottom: none; }
+
+  tbody td {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 13px 16px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  td.date-col { color: var(--text); font-weight: 500; }
+
+  .week-badge {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+  }
+
+  .dir-long {
+    color: var(--green);
+    background: var(--green-dim);
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .dir-short {
+    color: var(--red);
+    background: var(--red-dim);
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .dir-none {
+    color: var(--text-muted);
+    background: rgba(61,90,122,0.2);
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+
+  .result-win {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .result-loss {
+    color: var(--red);
+    font-weight: 600;
+  }
+
+  .result-be {
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  .result-notrade {
+    color: var(--text-muted);
+  }
+
+  .pnl-pos { color: var(--green); font-weight: 600; }
+  .pnl-neg { color: var(--red); font-weight: 600; }
+  .pnl-zero { color: var(--text-muted); }
+
+  td.cum-pnl {
+    text-align: right;
+    font-weight: 600;
+  }
+
+  .notes-cell {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* ─── DASHBOARD ─── */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .dash-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .dash-card-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dash-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(30,48,80,0.4);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  .dash-row:last-child { border-bottom: none; }
+
+  .dash-row-label { color: var(--text-dim); }
+  .dash-row-val { font-weight: 600; }
+
+  .bar-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .bar-item { display: flex; flex-direction: column; gap: 5px; }
+
+  .bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .bar-track {
+    height: 6px;
+    background: var(--bg3);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--cyan), #0077ff);
+    transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .bar-fill.gold { background: linear-gradient(90deg, var(--gold), #ff9800); }
+  .bar-fill.green { background: linear-gradient(90deg, var(--green), #00bfa5); }
+
+  /* Weekly Table */
+  .weekly-table {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .weekly-table table thead th {
+    background: var(--bg3);
+  }
+
+  .weekly-table table tbody td {
+    font-size: 13px;
+  }
+
+  /* ─── NOTES ─── */
+  .notes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .notes-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: border-color 0.2s;
+  }
+
+  .notes-card:hover { border-color: var(--border2); }
+
+  .notes-week-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 14px;
+  }
+
+  .notes-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    margin-top: 12px;
+  }
+
+  .notes-text {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .notes-text.observations { color: var(--text); }
+  .notes-text.mistakes { color: var(--red); opacity: 0.8; }
+  .notes-text.focus { color: var(--gold); opacity: 0.9; }
+
+  /* ─── FAB ─── */
+  .fab {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--cyan), #0077ff);
+    border: none;
+    color: #000;
+    font-size: 28px;
+    font-weight: 300;
+    cursor: pointer;
+    box-shadow: 0 0 30px var(--cyan-glow), 0 8px 32px rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    transition: transform 0.2s, box-shadow 0.2s;
+    line-height: 1;
+  }
+
+  .fab:hover {
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 0 50px rgba(0,212,255,0.5), 0 8px 32px rgba(0,0,0,0.5);
+  }
+
+  /* ─── MODAL OVERLAY ─── */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(4,8,20,0.85);
+    backdrop-filter: blur(6px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+
+  .overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* ─── MODAL ─── */
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    width: 520px;
+    max-width: 95vw;
+    padding: 32px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 60px rgba(0,212,255,0.06);
+    transform: translateY(20px) scale(0.97);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  .overlay.open .modal {
+    transform: translateY(0) scale(1);
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+
+  .modal-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  .modal-step-indicator {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 22px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+    transition: color 0.2s;
+  }
+
+  .modal-close:hover { color: var(--red); }
+
+  /* Progress bar */
+  .progress-track {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 28px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cyan), #0077ff);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+    box-shadow: 0 0 8px var(--cyan-glow);
+  }
+
+  /* Step */
+  .step { display: none; }
+  .step.active { display: block; animation: stepIn 0.25s ease; }
+
+  @keyframes stepIn {
+    from { opacity: 0; transform: translateX(12px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .step-question {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .step-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
+
+  /* Choice grid */
+  .choices {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .choices.cols-2 { grid-template-columns: 1fr 1fr; }
+  .choices.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .choices.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  .choice-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 14px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .choice-btn .choice-icon { font-size: 20px; }
+  .choice-btn:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: var(--cyan-dim);
+  }
+
+  .choice-btn.selected {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: var(--cyan-dim);
+    box-shadow: 0 0 12px rgba(0,212,255,0.15);
+  }
+
+  .choice-btn.long:hover, .choice-btn.long.selected {
+    border-color: var(--green);
+    color: var(--green);
+    background: var(--green-dim);
+    box-shadow: 0 0 12px rgba(0,230,118,0.15);
+  }
+
+  .choice-btn.short:hover, .choice-btn.short.selected {
+    border-color: var(--red);
+    color: var(--red);
+    background: var(--red-dim);
+    box-shadow: 0 0 12px rgba(255,77,109,0.15);
+  }
+
+  .choice-btn.win:hover, .choice-btn.win.selected {
+    border-color: var(--green);
+    color: var(--green);
+    background: var(--green-dim);
+  }
+
+  .choice-btn.loss:hover, .choice-btn.loss.selected {
+    border-color: var(--red);
+    color: var(--red);
+    background: var(--red-dim);
+  }
+
+  .choice-btn.be:hover, .choice-btn.be.selected {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: var(--gold-dim);
+  }
+
+  /* Input */
+  .input-group {
+    margin-bottom: 16px;
+  }
+
+  .input-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 7px;
+    display: block;
+  }
+
+  .modal-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    padding: 12px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .modal-input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(0,212,255,0.08);
+  }
+
+  textarea.modal-input {
+    resize: vertical;
+    min-height: 80px;
+    font-size: 13px;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* Modal footer */
+  .modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+  }
+
+  .btn-back {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 11px 22px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-back:hover { border-color: var(--border2); color: var(--text); }
+
+  .btn-next {
+    background: linear-gradient(135deg, var(--cyan), #0077ff);
+    border: none;
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 11px 28px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+
+  .btn-next:hover { box-shadow: 0 0 20px var(--cyan-glow); transform: translateY(-1px); }
+
+  .btn-next:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .btn-submit {
+    background: linear-gradient(135deg, var(--green), #00bfa5);
+    border: none;
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 11px 28px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-submit:hover { box-shadow: 0 0 20px rgba(0,230,118,0.3); transform: translateY(-1px); }
+
+  /* ─── Toast ─── */
+  .toast {
+    position: fixed;
+    bottom: 110px;
+    right: 32px;
+    background: var(--surface2);
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 12px 20px;
+    border-radius: var(--radius-sm);
+    z-index: 300;
+    box-shadow: 0 0 20px rgba(0,230,118,0.15);
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ─── Action buttons ─── */
+  .action-btns { display: flex; gap: 4px; justify-content: flex-end; }
+
+  .del-btn, .edit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 3px 7px;
+    border-radius: 4px;
+    transition: all 0.15s;
+    color: var(--text-muted);
+  }
+
+  .del-btn:hover { color: var(--red); background: var(--red-dim); }
+
+  .edit-btn:hover { color: var(--cyan); background: var(--cyan-dim); }
+
+  /* ─── Mode Toggle ─── */
+  .mode-toggle {
+    display: flex;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 4px;
+    gap: 2px;
+    position: relative;
+  }
+
+  .mode-btn {
+    background: none;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 16px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .mode-btn.active-paper {
+    background: rgba(0,212,255,0.15);
+    color: var(--cyan);
+    box-shadow: 0 0 12px rgba(0,212,255,0.1);
+  }
+
+  .mode-btn.active-live {
+    background: rgba(255,77,109,0.18);
+    color: var(--red);
+    box-shadow: 0 0 12px rgba(255,77,109,0.15);
+  }
+
+  /* Live mode — subtle red tint on the header border */
+  body.live-mode header {
+    border-bottom-color: rgba(255,77,109,0.3);
+  }
+
+  body.live-mode .header-icon {
+    background: linear-gradient(135deg, var(--red), #c0003c);
+    box-shadow: 0 0 24px rgba(255,77,109,0.35);
+  }
+
+  /* Mode banner strip */
+  .mode-banner {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,77,109,0.08);
+    border: 1px solid rgba(255,77,109,0.25);
+    border-radius: var(--radius-sm);
+    padding: 9px 16px;
+    margin-bottom: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--red);
+    letter-spacing: 1px;
+    animation: fadeSlideIn 0.3s ease;
+  }
+
+  .mode-banner.visible { display: flex; }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 8px var(--red);
+    animation: pulse-dot 1.2s infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.75); }
+  }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 900px) {
+    .stats-strip { grid-template-columns: repeat(3, 1fr); }
+    .dashboard-grid { grid-template-columns: 1fr; }
+    .tab-btn span { display: none; }
+  }
+
+  @media (max-width: 600px) {
+    .stats-strip { grid-template-columns: repeat(2, 1fr); }
+    header { flex-wrap: wrap; gap: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-left">
+      <div class="header-icon">⚡</div>
+      <div>
+        <h1>Trading Journal — <span>Micro S&P 500</span></h1>
+        <div class="header-subtitle">ES1! · New York · Real-Time Performance</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="mode-toggle" title="Switch trading mode">
+        <button class="mode-btn active-paper" id="btnPaper" onclick="setMode('paper')">📋 Paper</button>
+        <button class="mode-btn" id="btnLive" onclick="setMode('live')">🔴 Live</button>
+      </div>
+      <button class="tab-btn active" onclick="switchTab('journal', this)">📋 <span>Journal</span></button>
+      <button class="tab-btn" onclick="switchTab('dashboard', this)">📊 <span>Dashboard</span></button>
+      <button class="tab-btn" onclick="switchTab('notes', this)">📝 <span>Notes</span></button>
+    </div>
+  </header>
+
+  <!-- LIVE MODE BANNER -->
+  <div class="mode-banner" id="modeBanner">
+    <div class="live-dot"></div>
+    LIVE TRADING MODE — Real money on the line. Trade with discipline.
+  </div>
+
+  <!-- STATS STRIP -->
+  <div class="stats-strip" id="statsStrip">
+    <div class="stat-card highlight">
+      <div class="stat-label">Cum PnL</div>
+      <div class="stat-value pos" id="statCumPnl">+0.00</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Win Rate</div>
+      <div class="stat-value cyan" id="statWinRate">0.0%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Trades</div>
+      <div class="stat-value white" id="statTotal">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Win</div>
+      <div class="stat-value pos" id="statAvgWin">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Loss</div>
+      <div class="stat-value neg" id="statAvgLoss">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Profit Factor</div>
+      <div class="stat-value gold" id="statPF">—</div>
+    </div>
+  </div>
+
+  <!-- ─── JOURNAL SECTION ─── -->
+  <div class="section active" id="sec-journal">
+    <div class="table-header">
+      <div class="table-title">Trade Log</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);" id="tradeCount">0 entries</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Week</th>
+            <th>Direction</th>
+            <th>Setup</th>
+            <th>Session</th>
+            <th>Result</th>
+            <th>PnL (USDT)</th>
+            <th>Entry</th>
+            <th>Exit</th>
+            <th>Contracts</th>
+            <th>Notes</th>
+            <th>Cum PnL</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tradeTable">
+          <tr>
+            <td colspan="13">
+              <div class="empty-state">
+                <div class="empty-icon">📈</div>
+                <p>No trades yet. Hit the + button to log your first trade.</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── DASHBOARD SECTION ─── -->
+  <div class="section" id="sec-dashboard">
+    <div class="dashboard-grid">
+      <!-- Overall Stats -->
+      <div class="dash-card">
+        <div class="dash-card-title">🏆 Overall Stats</div>
+        <div class="dash-row"><span class="dash-row-label">Total Trades</span><span class="dash-row-val white" id="dTotal">0</span></div>
+        <div class="dash-row"><span class="dash-row-label">Wins</span><span class="dash-row-val pos" id="dWins">0</span></div>
+        <div class="dash-row"><span class="dash-row-label">Losses</span><span class="dash-row-val neg" id="dLosses">0</span></div>
+        <div class="dash-row"><span class="dash-row-label">Break Evens</span><span class="dash-row-val gold" id="dBE">0</span></div>
+        <div class="dash-row"><span class="dash-row-label">Win Rate</span><span class="dash-row-val cyan" id="dWinRate">0%</span></div>
+        <div class="dash-row"><span class="dash-row-label">Total PnL</span><span class="dash-row-val pos" id="dTotalPnl">+0.00</span></div>
+        <div class="dash-row"><span class="dash-row-label">Avg Win</span><span class="dash-row-val pos" id="dAvgWin">—</span></div>
+        <div class="dash-row"><span class="dash-row-label">Avg Loss</span><span class="dash-row-val neg" id="dAvgLoss">—</span></div>
+        <div class="dash-row"><span class="dash-row-label">Best Trade</span><span class="dash-row-val pos" id="dBest">—</span></div>
+        <div class="dash-row"><span class="dash-row-label">Worst Trade</span><span class="dash-row-val neg" id="dWorst">—</span></div>
+        <div class="dash-row"><span class="dash-row-label">Profit Factor</span><span class="dash-row-val gold" id="dPF">—</span></div>
+      </div>
+
+      <!-- Win Rate by Session -->
+      <div class="dash-card">
+        <div class="dash-card-title">🕐 Win Rate by Session</div>
+        <div class="bar-wrap" id="sessionBars"></div>
+      </div>
+
+      <!-- Win Rate by Setup -->
+      <div class="dash-card">
+        <div class="dash-card-title">⚡ Win Rate by Setup</div>
+        <div class="bar-wrap" id="setupBars"></div>
+      </div>
+    </div>
+
+    <!-- Weekly Breakdown -->
+    <div class="weekly-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Week</th>
+            <th>Trades</th>
+            <th>Wins</th>
+            <th>Losses</th>
+            <th>Win Rate</th>
+            <th>Total PnL</th>
+            <th>Avg PnL</th>
+            <th>Best Trade</th>
+          </tr>
+        </thead>
+        <tbody id="weeklyTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── NOTES SECTION ─── -->
+  <div class="section" id="sec-notes">
+    <div class="table-header">
+      <div class="table-title">Weekly Notes & Review</div>
+    </div>
+    <div class="notes-grid" id="notesGrid">
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">📝</div>
+        <p>No weekly notes yet. Add trades to generate weekly notes.</p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- FAB -->
+<button class="fab" onclick="openModal()" title="Add Trade">+</button>
+
+<!-- TOAST -->
+<div class="toast" id="toast">✓ Trade logged!</div>
+
+<!-- ─── MODAL ─── -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Log New Trade</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="modal-step-indicator" id="stepIndicator">Step 1 of 8</div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+    </div>
+
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:12.5%"></div>
+    </div>
+
+    <!-- STEP 1: Date -->
+    <div class="step active" id="step1">
+      <div class="step-question">When did this trade occur?</div>
+      <div class="step-hint">Select the date of the trade</div>
+      <div class="input-group">
+        <label class="input-label">Date</label>
+        <input class="modal-input" type="date" id="inputDate">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Week Label (auto-filled, can edit)</label>
+        <input class="modal-input" type="text" id="inputWeek" placeholder="e.g. Week 1">
+      </div>
+    </div>
+
+    <!-- STEP 2: Direction -->
+    <div class="step" id="step2">
+      <div class="step-question">What direction did you trade?</div>
+      <div class="step-hint">Choose your trade direction</div>
+      <div class="choices cols-3">
+        <button class="choice-btn long" onclick="choose('direction','Long',this)">
+          <span class="choice-icon">📈</span> Long
+        </button>
+        <button class="choice-btn short" onclick="choose('direction','Short',this)">
+          <span class="choice-icon">📉</span> Short
+        </button>
+        <button class="choice-btn" onclick="choose('direction','No Trade',this)">
+          <span class="choice-icon">⏸️</span> No Trade
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Setup -->
+    <div class="step" id="step3">
+      <div class="step-question">What setup did you use?</div>
+      <div class="step-hint">Select the trading setup</div>
+      <div class="choices cols-2">
+        <button class="choice-btn" onclick="choose('setup','Break and Retest',this)">
+          <span class="choice-icon">🔄</span> Break & Retest
+        </button>
+        <button class="choice-btn" onclick="choose('setup','Bounce',this)">
+          <span class="choice-icon">↩️</span> Bounce
+        </button>
+        <button class="choice-btn" onclick="choose('setup','Rejection',this)">
+          <span class="choice-icon">🚫</span> Rejection
+        </button>
+        <button class="choice-btn" onclick="choose('setup','ORB',this)">
+          <span class="choice-icon">⭕</span> ORB
+        </button>
+      </div>
+      <div class="input-group" style="margin-top:8px">
+        <label class="input-label">Or enter custom setup</label>
+        <input class="modal-input" type="text" id="inputSetupCustom" placeholder="Custom setup name...">
+      </div>
+    </div>
+
+    <!-- STEP 4: Session -->
+    <div class="step" id="step4">
+      <div class="step-question">Which session was this trade?</div>
+      <div class="step-hint">Select the market session</div>
+      <div class="choices cols-2">
+        <button class="choice-btn" onclick="choose('session','NY',this)">
+          <span class="choice-icon">🗽</span> New York
+        </button>
+        <button class="choice-btn" onclick="choose('session','London',this)">
+          <span class="choice-icon">🇬🇧</span> London
+        </button>
+        <button class="choice-btn" onclick="choose('session','Asia',this)">
+          <span class="choice-icon">🌏</span> Asia
+        </button>
+        <button class="choice-btn" onclick="choose('session','Pre-Market',this)">
+          <span class="choice-icon">🌅</span> Pre-Market
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 5: Result -->
+    <div class="step" id="step5">
+      <div class="step-question">What was the outcome?</div>
+      <div class="step-hint">Select your trade result</div>
+      <div class="choices cols-2">
+        <button class="choice-btn win" onclick="choose('result','Win',this)">
+          <span class="choice-icon">✅</span> Win
+        </button>
+        <button class="choice-btn loss" onclick="choose('result','Loss',this)">
+          <span class="choice-icon">❌</span> Loss
+        </button>
+        <button class="choice-btn be" onclick="choose('result','Break Even',this)">
+          <span class="choice-icon">➡️</span> Break Even
+        </button>
+        <button class="choice-btn" onclick="choose('result','No Trade',this)">
+          <span class="choice-icon">⏸️</span> No Trade
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 6: PnL & Contracts -->
+    <div class="step" id="step6">
+      <div class="step-question">PnL & Position Size</div>
+      <div class="step-hint">Enter your profit/loss and contract count</div>
+      <div class="input-group">
+        <label class="input-label">PnL (USDT) — use negative for loss</label>
+        <input class="modal-input" type="number" step="0.01" id="inputPnl" placeholder="e.g. +155.02 or -51.24">
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label">Entry Price</label>
+          <input class="modal-input" type="number" step="0.01" id="inputEntry" placeholder="e.g. 5820.50">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Exit Price</label>
+          <input class="modal-input" type="number" step="0.01" id="inputExit" placeholder="e.g. 5835.25">
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Contracts</label>
+        <input class="modal-input" type="number" min="1" id="inputContracts" placeholder="1" value="1">
+      </div>
+    </div>
+
+    <!-- STEP 7: Notes -->
+    <div class="step" id="step7">
+      <div class="step-question">Trade Notes</div>
+      <div class="step-hint">Add any observations, mistakes, or reminders</div>
+      <div class="input-group">
+        <label class="input-label">Trade Notes</label>
+        <textarea class="modal-input" id="inputNotes" placeholder="e.g. London Low respected — good reaction. Exited too early."></textarea>
+      </div>
+    </div>
+
+    <!-- STEP 8: Weekly Review -->
+    <div class="step" id="step8">
+      <div class="step-question">Weekly Review (optional)</div>
+      <div class="step-hint">Record your weekly observations and lessons</div>
+      <div class="input-group">
+        <label class="input-label">Key Observations</label>
+        <textarea class="modal-input" id="inputObservations" placeholder="What did you observe this week?" style="min-height:60px"></textarea>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Mistakes to Fix</label>
+        <textarea class="modal-input" id="inputMistakes" placeholder="What did you do wrong?" style="min-height:60px"></textarea>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Next Week Focus</label>
+        <textarea class="modal-input" id="inputFocus" placeholder="What will you focus on next week?" style="min-height:60px"></textarea>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer">
+      <button class="btn-back" id="btnBack" onclick="prevStep()" style="display:none">← Back</button>
+      <div style="flex:1"></div>
+      <button class="btn-next" id="btnNext" onclick="nextStep()">Next →</button>
+      <button class="btn-submit" id="btnSubmit" onclick="submitTrade()" style="display:none">Log Trade ✓</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────
+let trades = JSON.parse(localStorage.getItem('tj_trades') || '[]');
+let weeklyNotes = JSON.parse(localStorage.getItem('tj_notes') || '{}');
+
+const TOTAL_STEPS = 8;
+let currentStep = 1;
+let formData = {};
+let editIndex = -1; // -1 = new trade, >=0 = editing existing
+let currentMode = localStorage.getItem('tj_mode') || 'paper'; // 'paper' | 'live'
+
+// ─── MODE ────────────────────────────────────────────────────
+function setMode(mode) {
+  currentMode = mode;
+  localStorage.setItem('tj_mode', mode);
+
+  const isLive = mode === 'live';
+  document.body.classList.toggle('live-mode', isLive);
+  document.getElementById('modeBanner').classList.toggle('visible', isLive);
+  document.getElementById('btnPaper').className = 'mode-btn' + (isLive ? '' : ' active-paper');
+  document.getElementById('btnLive').className  = 'mode-btn' + (isLive ? ' active-live' : '');
+
+  renderTable();
+  renderStats();
+  // Re-render whichever secondary tab is active
+  if (document.getElementById('sec-dashboard').classList.contains('active')) renderDashboard();
+  if (document.getElementById('sec-notes').classList.contains('active')) renderNotes();
+}
+
+function activeTrades() {
+  return trades.filter(t => (t.mode || 'paper') === currentMode);
+}
+
+// ─── TABS ────────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + tab).classList.add('active');
+  btn.classList.add('active');
+  if (tab === 'dashboard') renderDashboard();
+  if (tab === 'notes') renderNotes();
+}
+
+// ─── MODAL ───────────────────────────────────────────────────
+function openModal(idx = -1) {
+  editIndex = idx;
+  currentStep = 1;
+  formData = {};
+
+  const isEdit = idx >= 0;
+  document.getElementById('modalTitle').textContent = isEdit ? 'Edit Trade' : 'Log New Trade';
+  document.getElementById('btnSubmit').textContent = isEdit ? 'Save Changes ✓' : 'Log Trade ✓';
+
+  // Prefill values — use existing trade if editing, else defaults
+  const t = isEdit ? trades[idx] : {};
+  const today = new Date().toISOString().split('T')[0];
+
+  document.getElementById('inputDate').value = t.date || today;
+  document.getElementById('inputWeek').value = t.week || ('Week ' + getWeekNumber());
+  document.getElementById('inputPnl').value = t.pnl !== undefined ? t.pnl : '';
+  document.getElementById('inputEntry').value = t.entry || '';
+  document.getElementById('inputExit').value = t.exit || '';
+  document.getElementById('inputContracts').value = t.contracts || 1;
+  document.getElementById('inputNotes').value = t.notes || '';
+  document.getElementById('inputSetupCustom').value = '';
+  document.getElementById('inputObservations').value = (weeklyNotes[t.week] || {}).observations || '';
+  document.getElementById('inputMistakes').value = (weeklyNotes[t.week] || {}).mistakes || '';
+  document.getElementById('inputFocus').value = (weeklyNotes[t.week] || {}).focus || '';
+
+  // Reset then re-select choice buttons
+  document.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
+  if (isEdit) {
+    // Pre-select matching choice buttons
+    if (t.direction) preselectChoice('direction', t.direction);
+    if (t.setup) {
+      const matched = preselectChoice('setup', t.setup);
+      if (!matched) document.getElementById('inputSetupCustom').value = t.setup;
+    }
+    if (t.session) preselectChoice('session', t.session);
+    if (t.result) preselectChoice('result', t.result);
+    // Copy all fields into formData so validation passes on steps already filled
+    Object.assign(formData, t);
+  }
+
+  updateModalUI();
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function overlayClick(e) {
+  if (e.target === document.getElementById('overlay')) closeModal();
+}
+
+function getWeekNumber() {
+  if (trades.length === 0) return 1;
+  const lastWeek = trades[trades.length - 1].week;
+  const match = lastWeek && lastWeek.match(/\d+/);
+  return match ? parseInt(match[0]) : 1;
+}
+
+function updateModalUI() {
+  // Show/hide steps
+  for (let i = 1; i <= TOTAL_STEPS; i++) {
+    document.getElementById('step' + i).classList.toggle('active', i === currentStep);
+  }
+  // Progress
+  document.getElementById('progressFill').style.width = (currentStep / TOTAL_STEPS * 100) + '%';
+  // Step indicator
+  document.getElementById('stepIndicator').textContent = `Step ${currentStep} of ${TOTAL_STEPS}`;
+  // Back button
+  document.getElementById('btnBack').style.display = currentStep > 1 ? 'inline-flex' : 'none';
+  // Next / Submit
+  const isLast = currentStep === TOTAL_STEPS;
+  document.getElementById('btnNext').style.display = isLast ? 'none' : 'inline-flex';
+  document.getElementById('btnSubmit').style.display = isLast ? 'inline-flex' : 'none';
+}
+
+function choose(field, value, btn) {
+  formData[field] = value;
+  // Highlight selected
+  const parent = btn.closest('.choices');
+  parent.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function nextStep() {
+  // Validation per step
+  if (currentStep === 1) {
+    const d = document.getElementById('inputDate').value;
+    if (!d) { shake('step1'); return; }
+    formData.date = d;
+    formData.week = document.getElementById('inputWeek').value || 'Week ?';
+  }
+  if (currentStep === 2 && !formData.direction) { shake('step2'); return; }
+  if (currentStep === 3) {
+    const custom = document.getElementById('inputSetupCustom').value.trim();
+    if (custom) formData.setup = custom;
+    if (!formData.setup) { shake('step3'); return; }
+  }
+  if (currentStep === 4 && !formData.session) { shake('step4'); return; }
+  if (currentStep === 5 && !formData.result) { shake('step5'); return; }
+  if (currentStep === 6) {
+    formData.pnl = parseFloat(document.getElementById('inputPnl').value) || 0;
+    formData.entry = document.getElementById('inputEntry').value || '';
+    formData.exit = document.getElementById('inputExit').value || '';
+    formData.contracts = parseInt(document.getElementById('inputContracts').value) || 1;
+  }
+  if (currentStep === 7) {
+    formData.notes = document.getElementById('inputNotes').value.trim();
+  }
+  if (currentStep < TOTAL_STEPS) {
+    currentStep++;
+    updateModalUI();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 1) { currentStep--; updateModalUI(); }
+}
+
+function shake(stepId) {
+  const el = document.getElementById(stepId);
+  el.style.animation = 'none';
+  el.offsetHeight;
+  el.style.animation = 'shake 0.3s ease';
+}
+
+// Add shake keyframes
+const style = document.createElement('style');
+style.textContent = `@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }`;
+document.head.appendChild(style);
+
+function preselectChoice(field, value) {
+  // Find a choice button whose text content matches value and trigger choose()
+  let found = false;
+  document.querySelectorAll('.choice-btn').forEach(b => {
+    const label = b.textContent.trim().replace(/\s+/g, ' ');
+    // Match by value substring (handles emoji + label combos)
+    if (label.includes(value) || value.includes(label.replace(/[^\w\s]/g, '').trim())) {
+      // Only match buttons that belong to the right step
+      const stepMap = { direction: 'step2', setup: 'step3', session: 'step4', result: 'step5' };
+      if (b.closest('#' + stepMap[field])) {
+        b.classList.add('selected');
+        found = true;
+      }
+    }
+  });
+  return found;
+}
+
+function editTrade(i) {
+  openModal(i);
+}
+
+function submitTrade() {
+  // Collect step 8
+  formData.observations = document.getElementById('inputObservations').value.trim();
+  formData.mistakes = document.getElementById('inputMistakes').value.trim();
+  formData.focus = document.getElementById('inputFocus').value.trim();
+
+  // Save weekly notes
+  if (formData.observations || formData.mistakes || formData.focus) {
+    weeklyNotes[formData.week] = {
+      observations: formData.observations,
+      mistakes: formData.mistakes,
+      focus: formData.focus
+    };
+    localStorage.setItem('tj_notes', JSON.stringify(weeklyNotes));
+  }
+
+  if (editIndex >= 0) {
+    // Update existing trade (keep its original mode)
+    trades[editIndex] = { ...formData, mode: trades[editIndex].mode || 'paper' };
+    showToast('Trade updated successfully!');
+  } else {
+    // Add new trade tagged with current mode
+    trades.push({ ...formData, mode: currentMode });
+    showToast('Trade logged successfully!');
+  }
+
+  localStorage.setItem('tj_trades', JSON.stringify(trades));
+  closeModal();
+  renderTable();
+  renderStats();
+}
+
+// ─── RENDER TABLE ─────────────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById('tradeTable');
+  const view = activeTrades();
+  document.getElementById('tradeCount').textContent = view.length + ' entr' + (view.length === 1 ? 'y' : 'ies');
+
+  if (view.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="13"><div class="empty-state"><div class="empty-icon">${currentMode === 'live' ? '💹' : '📈'}</div><p>No ${currentMode} trades yet. Hit the + button to log your first trade.</p></div></td></tr>`;
+    return;
+  }
+
+  let cumPnl = 0;
+  tbody.innerHTML = view.map((t) => {
+    // Find real index in global trades array so edit/delete work correctly
+    const globalIdx = trades.indexOf(t);
+    cumPnl += t.pnl || 0;
+    const pnl = t.pnl || 0;
+    const pnlClass = pnl > 0 ? 'pnl-pos' : pnl < 0 ? 'pnl-neg' : 'pnl-zero';
+    const pnlStr = pnl !== 0 ? (pnl > 0 ? '+' : '') + pnl.toFixed(2) : '—';
+    const cumClass = cumPnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+    const cumStr = (cumPnl >= 0 ? '+' : '') + cumPnl.toFixed(2);
+    const dirClass = t.direction === 'Long' ? 'dir-long' : t.direction === 'Short' ? 'dir-short' : 'dir-none';
+    const resClass = t.result === 'Win' ? 'result-win' : t.result === 'Loss' ? 'result-loss' : t.result === 'Break Even' ? 'result-be' : 'result-notrade';
+
+    return `<tr>
+      <td class="date-col">${formatDate(t.date)}</td>
+      <td><span class="week-badge">${t.week || '—'}</span></td>
+      <td><span class="${dirClass}">${t.direction || '—'}</span></td>
+      <td>${t.setup || '—'}</td>
+      <td>${t.session || '—'}</td>
+      <td class="${resClass}">${t.result || '—'}</td>
+      <td class="${pnlClass}">${pnlStr}</td>
+      <td>${t.entry || '—'}</td>
+      <td>${t.exit || '—'}</td>
+      <td>${t.contracts || 1}</td>
+      <td class="notes-cell" title="${(t.notes||'').replace(/"/g,'&quot;')}">${t.notes || '—'}</td>
+      <td class="cum-pnl ${cumClass}">${cumStr}</td>
+      <td><div class="action-btns">
+        <button class="edit-btn" onclick="editTrade(${globalIdx})" title="Edit trade">✏️</button>
+        <button class="del-btn" onclick="deleteTrade(${globalIdx})" title="Delete trade">✕</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function deleteTrade(i) {
+  if (confirm('Delete this trade?')) {
+    trades.splice(i, 1);
+    localStorage.setItem('tj_trades', JSON.stringify(trades));
+    renderTable();
+    renderStats();
+  }
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  const parts = d.split('-');
+  if (parts.length < 3) return d;
+  return parts[2] + '/' + parts[1] + '/' + parts[0];
+}
+
+// ─── STATS ────────────────────────────────────────────────────
+function renderStats() {
+  const all = activeTrades();
+  const actual = all.filter(t => t.result !== 'No Trade' && t.direction !== 'No Trade');
+  const wins = actual.filter(t => t.result === 'Win');
+  const losses = actual.filter(t => t.result === 'Loss');
+  const total = actual.length;
+  const cumPnl = all.reduce((s, t) => s + (t.pnl || 0), 0);
+  const winRate = total > 0 ? (wins.length / total * 100).toFixed(1) : 0;
+  const avgWin = wins.length > 0 ? wins.reduce((s, t) => s + t.pnl, 0) / wins.length : null;
+  const avgLoss = losses.length > 0 ? losses.reduce((s, t) => s + t.pnl, 0) / losses.length : null;
+  const grossWin = wins.reduce((s, t) => s + t.pnl, 0);
+  const grossLoss = Math.abs(losses.reduce((s, t) => s + t.pnl, 0));
+  const pf = grossLoss > 0 ? (grossWin / grossLoss).toFixed(2) : null;
+
+  const fmt = (v, plus) => v != null ? (plus && v > 0 ? '+' : '') + v.toFixed(2) : '—';
+
+  document.getElementById('statCumPnl').textContent = fmt(cumPnl, true);
+  document.getElementById('statCumPnl').className = 'stat-value ' + (cumPnl >= 0 ? 'pos' : 'neg');
+  document.getElementById('statWinRate').textContent = winRate + '%';
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statAvgWin').textContent = avgWin != null ? '+' + avgWin.toFixed(2) : '—';
+  document.getElementById('statAvgLoss').textContent = avgLoss != null ? avgLoss.toFixed(2) : '—';
+  document.getElementById('statPF').textContent = pf ? pf + 'x' : '—';
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────
+function renderDashboard() {
+  const all = activeTrades();
+  const actual = all.filter(t => t.result !== 'No Trade' && t.direction !== 'No Trade');
+  const wins = actual.filter(t => t.result === 'Win');
+  const losses = actual.filter(t => t.result === 'Loss');
+  const be = actual.filter(t => t.result === 'Break Even');
+  const total = actual.length;
+  const cumPnl = all.reduce((s, t) => s + (t.pnl || 0), 0);
+  const winRate = total > 0 ? (wins.length / total * 100).toFixed(1) : 0;
+  const avgWin = wins.length > 0 ? wins.reduce((s, t) => s + t.pnl, 0) / wins.length : null;
+  const avgLoss = losses.length > 0 ? losses.reduce((s, t) => s + t.pnl, 0) / losses.length : null;
+  const grossWin = wins.reduce((s, t) => s + t.pnl, 0);
+  const grossLoss = Math.abs(losses.reduce((s, t) => s + t.pnl, 0));
+  const pf = grossLoss > 0 ? (grossWin / grossLoss).toFixed(2) + 'x' : '—';
+  const best = actual.length > 0 ? Math.max(...actual.map(t => t.pnl)) : null;
+  const worst = actual.length > 0 ? Math.min(...actual.map(t => t.pnl)) : null;
+  const fmt = (v, plus) => v != null ? (plus && v > 0 ? '+' : '') + v.toFixed(2) : '—';
+
+  document.getElementById('dTotal').textContent = total;
+  document.getElementById('dWins').textContent = wins.length;
+  document.getElementById('dLosses').textContent = losses.length;
+  document.getElementById('dBE').textContent = be.length;
+  document.getElementById('dWinRate').textContent = winRate + '%';
+  document.getElementById('dTotalPnl').textContent = fmt(cumPnl, true);
+  document.getElementById('dTotalPnl').className = 'dash-row-val ' + (cumPnl >= 0 ? 'pos' : 'neg');
+  document.getElementById('dAvgWin').textContent = avgWin != null ? '+' + avgWin.toFixed(2) : '—';
+  document.getElementById('dAvgLoss').textContent = avgLoss != null ? avgLoss.toFixed(2) : '—';
+  document.getElementById('dBest').textContent = best != null ? '+' + best.toFixed(2) : '—';
+  document.getElementById('dWorst').textContent = worst != null ? worst.toFixed(2) : '—';
+  document.getElementById('dPF').textContent = pf;
+
+  // Session bars
+  const sessions = ['NY', 'London', 'Asia', 'Pre-Market'];
+  document.getElementById('sessionBars').innerHTML = sessions.map(s => {
+    const st = actual.filter(t => t.session === s);
+    const sw = st.filter(t => t.result === 'Win').length;
+    const wr = st.length > 0 ? Math.round(sw / st.length * 100) : 0;
+    return barItem(s, wr, st.length, 'cyan');
+  }).join('');
+
+  // Setup bars
+  const setups = ['Break and Retest', 'Bounce', 'Rejection', 'ORB'];
+  const allSetups = [...new Set(actual.map(t => t.setup).filter(Boolean))];
+  const allSetupsList = [...new Set([...setups, ...allSetups])];
+  document.getElementById('setupBars').innerHTML = allSetupsList.map(s => {
+    const st = actual.filter(t => t.setup === s);
+    const sw = st.filter(t => t.result === 'Win').length;
+    const wr = st.length > 0 ? Math.round(sw / st.length * 100) : 0;
+    return barItem(s, wr, st.length, 'gold');
+  }).join('');
+
+  // Weekly table
+  const weeks = [...new Set(all.map(t => t.week).filter(Boolean))];
+  const tbody = document.getElementById('weeklyTable');
+  if (weeks.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:12px;">No data yet</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = weeks.map(w => {
+    const wt = all.filter(t => t.week === w && t.result !== 'No Trade' && t.direction !== 'No Trade');
+    const ww = wt.filter(t => t.result === 'Win');
+    const wl = wt.filter(t => t.result === 'Loss');
+    const wtPnl = wt.reduce((s, t) => s + (t.pnl || 0), 0);
+    const avgPnl = wt.length > 0 ? wtPnl / wt.length : 0;
+    const bestW = wt.length > 0 ? Math.max(...wt.map(t => t.pnl || 0)) : null;
+    const wr = wt.length > 0 ? (ww.length / wt.length * 100).toFixed(1) : 0;
+    const pnlClass = wtPnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+    return `<tr>
+      <td style="font-weight:700;color:var(--text)">${w}</td>
+      <td>${wt.length}</td>
+      <td style="color:var(--green)">${ww.length}</td>
+      <td style="color:var(--red)">${wl.length}</td>
+      <td style="color:var(--cyan)">${wr}%</td>
+      <td class="${pnlClass}">${(wtPnl >= 0 ? '+' : '') + wtPnl.toFixed(2)}</td>
+      <td style="color:var(--text-dim)">${(avgPnl >= 0 ? '+' : '') + avgPnl.toFixed(2)}</td>
+      <td style="color:var(--green)">${bestW != null ? '+' + bestW.toFixed(2) : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function barItem(label, wr, count, color) {
+  return `<div class="bar-item">
+    <div class="bar-label"><span>${label}</span><span>${wr}% (${count} trades)</span></div>
+    <div class="bar-track"><div class="bar-fill ${color}" style="width:${wr}%"></div></div>
+  </div>`;
+}
+
+// ─── NOTES ────────────────────────────────────────────────────
+function renderNotes() {
+  const weeks = [...new Set(activeTrades().map(t => t.week).filter(Boolean))];
+  const grid = document.getElementById('notesGrid');
+
+  if (weeks.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📝</div><p>No weekly notes yet. Add trades and reviews to see them here.</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = weeks.map(w => {
+    const n = weeklyNotes[w] || {};
+    return `<div class="notes-card">
+      <div class="notes-week-tag">📅 ${w}</div>
+      <div class="notes-section-label">🔭 Key Observations</div>
+      <div class="notes-text observations">${n.observations || '<span style="color:var(--text-muted)">No observations recorded.</span>'}</div>
+      <div class="notes-section-label">⚠️ Mistakes to Fix</div>
+      <div class="notes-text mistakes">${n.mistakes || '<span style="color:var(--text-muted)">No mistakes recorded.</span>'}</div>
+      <div class="notes-section-label">🎯 Next Week Focus</div>
+      <div class="notes-text focus">${n.focus || '<span style="color:var(--text-muted)">No focus set.</span>'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── TOAST ────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = '✓ ' + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────
+setMode(currentMode);
+</script>
+</body>
+</html>
