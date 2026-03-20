@@ -1338,8 +1338,8 @@
         <button onclick="signOut()" title="Sign out" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;padding:2px 4px;border-radius:4px;transition:color 0.15s;line-height:1;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text-muted)'">⏏</button>
       </div>
       <div class="mode-toggle" title="Switch trading mode">
-        <button class="mode-btn active-paper" id="btnPaper" onclick="setMode('paper')">📋 Paper</button>
-        <button class="mode-btn" id="btnLive" onclick="setMode('live')">🔴 Live</button>
+        <button class="mode-btn active-paper" id="btnPaper" onclick="setMode('paper')">Paper</button>
+        <button class="mode-btn" id="btnLive" onclick="setMode('live')">Live</button>
       </div>
     </div>
   </header>
@@ -1361,13 +1361,13 @@
   <div class="filter-bar" id="filterBar">
     <button class="filter-all-btn active" id="filterAllBtn" onclick="setFilterAll()">⚡ All</button>
     <select class="filter-select" id="filterAssetClass" onchange="onFilterAssetChange()">
-      <option value="">Asset Class ▾</option>
-      <option value="Futures">📊 Futures</option>
-      <option value="Crypto">₿ Crypto</option>
-      <option value="Stocks">🏢 Stocks</option>
-      <option value="Options">📋 Options</option>
-      <option value="Forex">💱 Forex</option>
-      <option value="Commodities">🥇 Commodities</option>
+      <option value="">Asset Class</option>
+      <option value="Futures">Futures</option>
+      <option value="Crypto">Crypto</option>
+      <option value="Stocks">Stocks</option>
+      <option value="Options">Options</option>
+      <option value="Forex">Forex</option>
+      <option value="Commodities">Commodities</option>
     </select>
     <select class="filter-select" id="filterInstrument" onchange="onFilterInstrumentChange()" style="display:none">
       <option value="">All Instruments</option>
