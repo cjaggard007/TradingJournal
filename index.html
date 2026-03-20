@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Trading Journal — Micro S&P 500</title>
+<title>Trading Journal</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -1172,8 +1172,8 @@
     <div class="header-left">
       <div class="header-icon">⚡</div>
       <div>
-        <h1>Trading Journal — <span>Micro S&P 500</span></h1>
-        <div class="header-subtitle">ES1! · New York · Real-Time Performance</div>
+        <h1>Trading <span>Journal</span></h1>
+        <div class="header-subtitle">Multi-Asset · Cloud Sync · Real-Time</div>
       </div>
     </div>
     <div class="header-right">
@@ -1243,6 +1243,8 @@
           <tr>
             <th>Date</th>
             <th>Week</th>
+            <th>Asset</th>
+            <th>Instrument</th>
             <th>Direction</th>
             <th>Setup</th>
             <th>Session</th>
@@ -1258,7 +1260,7 @@
         </thead>
         <tbody id="tradeTable">
           <tr>
-            <td colspan="13">
+            <td colspan="15">
               <div class="empty-state">
                 <div class="empty-icon">📈</div>
                 <p>No trades yet. Hit the + button to log your first trade.</p>
@@ -1374,8 +1376,45 @@
       </div>
     </div>
 
-    <!-- STEP 2: Direction -->
+    <!-- STEP 2: Asset Class -->
     <div class="step" id="step2">
+      <div class="step-question">What asset class did you trade?</div>
+      <div class="step-hint">Select the market category</div>
+      <div class="choices cols-2">
+        <button class="choice-btn" onclick="chooseAssetClass('Futures',this)">
+          <span class="choice-icon">📊</span> Futures
+        </button>
+        <button class="choice-btn" onclick="chooseAssetClass('Crypto',this)">
+          <span class="choice-icon">₿</span> Crypto
+        </button>
+        <button class="choice-btn" onclick="chooseAssetClass('Stocks',this)">
+          <span class="choice-icon">🏢</span> Stocks
+        </button>
+        <button class="choice-btn" onclick="chooseAssetClass('Options',this)">
+          <span class="choice-icon">📋</span> Options
+        </button>
+        <button class="choice-btn" onclick="chooseAssetClass('Forex',this)">
+          <span class="choice-icon">💱</span> Forex
+        </button>
+        <button class="choice-btn" onclick="chooseAssetClass('Commodities',this)">
+          <span class="choice-icon">🥇</span> Commodities
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Instrument -->
+    <div class="step" id="step3">
+      <div class="step-question">Which instrument?</div>
+      <div class="step-hint">Select or type your specific instrument</div>
+      <div class="choices cols-3" id="instrumentChoices"></div>
+      <div class="input-group" style="margin-top:10px;">
+        <label class="input-label">Or type a custom instrument</label>
+        <input class="modal-input" type="text" id="inputInstrumentCustom" placeholder="e.g. AAPL, TSLA, ETH...">
+      </div>
+    </div>
+
+    <!-- STEP 4: Direction -->
+    <div class="step" id="step4">
       <div class="step-question">What direction did you trade?</div>
       <div class="step-hint">Choose your trade direction</div>
       <div class="choices cols-3">
@@ -1391,8 +1430,8 @@
       </div>
     </div>
 
-    <!-- STEP 3: Setup -->
-    <div class="step" id="step3">
+    <!-- STEP 5: Setup -->
+    <div class="step" id="step5">
       <div class="step-question">What setup did you use?</div>
       <div class="step-hint">Select the trading setup</div>
       <div class="choices cols-2">
@@ -1408,6 +1447,12 @@
         <button class="choice-btn" onclick="choose('setup','ORB',this)">
           <span class="choice-icon">⭕</span> ORB
         </button>
+        <button class="choice-btn" onclick="choose('setup','Trend Follow',this)">
+          <span class="choice-icon">🌊</span> Trend Follow
+        </button>
+        <button class="choice-btn" onclick="choose('setup','Reversal',this)">
+          <span class="choice-icon">🔃</span> Reversal
+        </button>
       </div>
       <div class="input-group" style="margin-top:8px">
         <label class="input-label">Or enter custom setup</label>
@@ -1415,8 +1460,8 @@
       </div>
     </div>
 
-    <!-- STEP 4: Session -->
-    <div class="step" id="step4">
+    <!-- STEP 6: Session -->
+    <div class="step" id="step6">
       <div class="step-question">Which session was this trade?</div>
       <div class="step-hint">Select the market session</div>
       <div class="choices cols-2">
@@ -1432,11 +1477,17 @@
         <button class="choice-btn" onclick="choose('session','Pre-Market',this)">
           <span class="choice-icon">🌅</span> Pre-Market
         </button>
+        <button class="choice-btn" onclick="choose('session','After-Hours',this)">
+          <span class="choice-icon">🌙</span> After-Hours
+        </button>
+        <button class="choice-btn" onclick="choose('session','24/7',this)">
+          <span class="choice-icon">🔄</span> 24/7
+        </button>
       </div>
     </div>
 
-    <!-- STEP 5: Result -->
-    <div class="step" id="step5">
+    <!-- STEP 7: Result -->
+    <div class="step" id="step7">
       <div class="step-question">What was the outcome?</div>
       <div class="step-hint">Select your trade result</div>
       <div class="choices cols-2">
@@ -1455,10 +1506,10 @@
       </div>
     </div>
 
-    <!-- STEP 6: PnL & Contracts -->
-    <div class="step" id="step6">
+    <!-- STEP 8: PnL & Contracts -->
+    <div class="step" id="step8">
       <div class="step-question">PnL & Position Size</div>
-      <div class="step-hint">Enter your profit/loss and contract count</div>
+      <div class="step-hint">Enter your profit/loss and size</div>
       <div class="input-group">
         <label class="input-label">PnL (USDT) — use negative for loss</label>
         <input class="modal-input" type="number" step="0.01" id="inputPnl" placeholder="e.g. +155.02 or -51.24">
@@ -1474,13 +1525,13 @@
         </div>
       </div>
       <div class="input-group">
-        <label class="input-label">Contracts</label>
+        <label class="input-label" id="contractsLabel">Contracts / Shares / Units</label>
         <input class="modal-input" type="number" min="1" id="inputContracts" placeholder="1" value="1">
       </div>
     </div>
 
-    <!-- STEP 7: Notes -->
-    <div class="step" id="step7">
+    <!-- STEP 9: Notes -->
+    <div class="step" id="step9">
       <div class="step-question">Trade Notes</div>
       <div class="step-hint">Add any observations, mistakes, or reminders</div>
       <div class="input-group">
@@ -1489,8 +1540,8 @@
       </div>
     </div>
 
-    <!-- STEP 8: Weekly Review -->
-    <div class="step" id="step8">
+    <!-- STEP 10: Weekly Review -->
+    <div class="step" id="step10">
       <div class="step-question">Weekly Review (optional)</div>
       <div class="step-hint">Record your weekly observations and lessons</div>
       <div class="input-group">
@@ -1551,7 +1602,7 @@ let trades = [];
 let weeklyNotes = {};
 let currentUser = null;
 
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 10;
 let currentStep = 1;
 let formData = {};
 let editIndex = -1; // -1 = new trade, >=0 = editing existing
@@ -1616,6 +1667,7 @@ function openModal(idx = -1) {
   document.getElementById('inputContracts').value = t.contracts || 1;
   document.getElementById('inputNotes').value = t.notes || '';
   document.getElementById('inputSetupCustom').value = '';
+  document.getElementById('inputInstrumentCustom').value = '';
   document.getElementById('inputObservations').value = (weeklyNotes[t.week] || {}).observations || '';
   document.getElementById('inputMistakes').value = (weeklyNotes[t.week] || {}).mistakes || '';
   document.getElementById('inputFocus').value = (weeklyNotes[t.week] || {}).focus || '';
@@ -1623,15 +1675,28 @@ function openModal(idx = -1) {
   // Reset then re-select choice buttons
   document.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
   if (isEdit) {
-    // Pre-select matching choice buttons
+    if (t.assetClass) {
+      preselectChoice('assetClass', t.assetClass);
+      // Rebuild instrument list for the saved asset class
+      if (INSTRUMENTS[t.assetClass]) {
+        document.getElementById('instrumentChoices').innerHTML = INSTRUMENTS[t.assetClass].map(inst =>
+          `<button class="choice-btn" onclick="choose('instrument','${inst.label}',this)">
+            <span class="choice-icon">${inst.icon}</span>${inst.label}
+          </button>`
+        ).join('');
+      }
+    }
+    if (t.instrument) {
+      const matched = preselectChoice('instrument', t.instrument);
+      if (!matched) document.getElementById('inputInstrumentCustom').value = t.instrument;
+    }
     if (t.direction) preselectChoice('direction', t.direction);
     if (t.setup) {
       const matched = preselectChoice('setup', t.setup);
       if (!matched) document.getElementById('inputSetupCustom').value = t.setup;
     }
     if (t.session) preselectChoice('session', t.session);
-    if (t.result) preselectChoice('result', t.result);
-    // Copy all fields into formData so validation passes on steps already filled
+    if (t.result)  preselectChoice('result', t.result);
     Object.assign(formData, t);
   }
 
@@ -1673,35 +1738,108 @@ function updateModalUI() {
 
 function choose(field, value, btn) {
   formData[field] = value;
-  // Highlight selected
   const parent = btn.closest('.choices');
   parent.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
 }
 
+// ─── INSTRUMENTS ──────────────────────────────────────────────
+const INSTRUMENTS = {
+  Futures: [
+    { label: 'MES', icon: '📊' }, { label: 'MNQ', icon: '💻' },
+    { label: 'ES',  icon: '📈' }, { label: 'NQ',  icon: '🖥️' },
+    { label: 'YM',  icon: '🏭' }, { label: 'MYM', icon: '🏗️' },
+    { label: 'RTY', icon: '📉' }, { label: 'M2K', icon: '🔬' },
+    { label: 'CL',  icon: '🛢️' }, { label: 'GC',  icon: '🥇' },
+    { label: 'SI',  icon: '🪙' }, { label: 'ZB',  icon: '📋' },
+  ],
+  Crypto: [
+    { label: 'Bitcoin (BTC)',   icon: '₿'  }, { label: 'Ethereum (ETH)',  icon: '🔷' },
+    { label: 'Solana (SOL)',    icon: '🌞' }, { label: 'XRP',             icon: '💧' },
+    { label: 'Dogecoin (DOGE)',icon: '🐶' }, { label: 'BNB',             icon: '🟡' },
+    { label: 'Cardano (ADA)',   icon: '🔵' }, { label: 'Avalanche (AVAX)',icon: '🔺' },
+    { label: 'Chainlink (LINK)',icon: '🔗' }, { label: 'Polkadot (DOT)',  icon: '⚫' },
+    { label: 'MATIC',           icon: '🟣' }, { label: 'LTC',             icon: '🥈' },
+  ],
+  Stocks: [
+    { label: 'AAPL',  icon: '🍎' }, { label: 'TSLA',  icon: '⚡' },
+    { label: 'NVDA',  icon: '🎮' }, { label: 'AMZN',  icon: '📦' },
+    { label: 'MSFT',  icon: '🪟' }, { label: 'GOOGL', icon: '🔍' },
+    { label: 'META',  icon: '👤' }, { label: 'NFLX',  icon: '🎬' },
+    { label: 'AMD',   icon: '💾' }, { label: 'SPY',   icon: '🗽' },
+    { label: 'QQQ',   icon: '💻' }, { label: 'IWM',   icon: '📊' },
+  ],
+  Options: [
+    { label: 'SPY Calls',  icon: '📈' }, { label: 'SPY Puts',   icon: '📉' },
+    { label: 'QQQ Calls',  icon: '💻' }, { label: 'QQQ Puts',   icon: '🖥️' },
+    { label: 'AAPL Calls', icon: '🍎' }, { label: 'AAPL Puts',  icon: '🍏' },
+    { label: 'TSLA Calls', icon: '⚡' }, { label: 'TSLA Puts',  icon: '🔋' },
+    { label: 'NVDA Calls', icon: '🎮' }, { label: '0DTE SPY',   icon: '🔥' },
+    { label: '0DTE QQQ',   icon: '⏰' }, { label: 'LEAPS',      icon: '📅' },
+  ],
+  Forex: [
+    { label: 'EUR/USD', icon: '🇪🇺' }, { label: 'GBP/USD', icon: '🇬🇧' },
+    { label: 'USD/JPY', icon: '🇯🇵' }, { label: 'AUD/USD', icon: '🇦🇺' },
+    { label: 'USD/CAD', icon: '🇨🇦' }, { label: 'USD/CHF', icon: '🇨🇭' },
+    { label: 'NZD/USD', icon: '🇳🇿' }, { label: 'EUR/GBP', icon: '💶' },
+    { label: 'GBP/JPY', icon: '💷' }, { label: 'EUR/JPY', icon: '💴' },
+    { label: 'USD/MXN', icon: '🇲🇽' }, { label: 'USD/SGD', icon: '🇸🇬' },
+  ],
+  Commodities: [
+    { label: 'Gold',       icon: '🥇' }, { label: 'Silver',     icon: '🥈' },
+    { label: 'Crude Oil',  icon: '🛢️' }, { label: 'Nat Gas',    icon: '🔥' },
+    { label: 'Copper',     icon: '🪙' }, { label: 'Wheat',      icon: '🌾' },
+    { label: 'Corn',       icon: '🌽' }, { label: 'Soybeans',   icon: '🫘' },
+    { label: 'Coffee',     icon: '☕' }, { label: 'Cotton',     icon: '🌿' },
+    { label: 'Platinum',   icon: '💎' }, { label: 'Palladium',  icon: '⚗️' },
+  ],
+};
+
+function chooseAssetClass(assetClass, btn) {
+  formData.assetClass = assetClass;
+  formData.instrument = ''; // reset instrument when class changes
+  const parent = btn.closest('.choices');
+  parent.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+
+  // Populate instrument step
+  const instruments = INSTRUMENTS[assetClass] || [];
+  document.getElementById('instrumentChoices').innerHTML = instruments.map(inst =>
+    `<button class="choice-btn" onclick="choose('instrument','${inst.label}',this)">
+      <span class="choice-icon">${inst.icon}</span>${inst.label}
+    </button>`
+  ).join('');
+  document.getElementById('inputInstrumentCustom').value = '';
+}
+
 function nextStep() {
-  // Validation per step
   if (currentStep === 1) {
     const d = document.getElementById('inputDate').value;
     if (!d) { shake('step1'); return; }
     formData.date = d;
     formData.week = document.getElementById('inputWeek').value || 'Week ?';
   }
-  if (currentStep === 2 && !formData.direction) { shake('step2'); return; }
+  if (currentStep === 2 && !formData.assetClass) { shake('step2'); return; }
   if (currentStep === 3) {
+    const custom = document.getElementById('inputInstrumentCustom').value.trim();
+    if (custom) formData.instrument = custom;
+    if (!formData.instrument) { shake('step3'); return; }
+  }
+  if (currentStep === 4 && !formData.direction) { shake('step4'); return; }
+  if (currentStep === 5) {
     const custom = document.getElementById('inputSetupCustom').value.trim();
     if (custom) formData.setup = custom;
-    if (!formData.setup) { shake('step3'); return; }
+    if (!formData.setup) { shake('step5'); return; }
   }
-  if (currentStep === 4 && !formData.session) { shake('step4'); return; }
-  if (currentStep === 5 && !formData.result) { shake('step5'); return; }
-  if (currentStep === 6) {
+  if (currentStep === 6 && !formData.session) { shake('step6'); return; }
+  if (currentStep === 7 && !formData.result) { shake('step7'); return; }
+  if (currentStep === 8) {
     formData.pnl = parseFloat(document.getElementById('inputPnl').value) || 0;
     formData.entry = document.getElementById('inputEntry').value || '';
     formData.exit = document.getElementById('inputExit').value || '';
     formData.contracts = parseInt(document.getElementById('inputContracts').value) || 1;
   }
-  if (currentStep === 7) {
+  if (currentStep === 9) {
     formData.notes = document.getElementById('inputNotes').value.trim();
   }
   if (currentStep < TOTAL_STEPS) {
@@ -1727,15 +1865,12 @@ style.textContent = `@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%
 document.head.appendChild(style);
 
 function preselectChoice(field, value) {
-  // Find a choice button whose text content matches value and trigger choose()
   let found = false;
+  const stepMap = { assetClass: 'step2', instrument: 'step3', direction: 'step4', setup: 'step5', session: 'step6', result: 'step7' };
   document.querySelectorAll('.choice-btn').forEach(b => {
     const label = b.textContent.trim().replace(/\s+/g, ' ');
-    // Match by value substring (handles emoji + label combos)
-    if (label.includes(value) || value.includes(label.replace(/[^\w\s]/g, '').trim())) {
-      // Only match buttons that belong to the right step
-      const stepMap = { direction: 'step2', setup: 'step3', session: 'step4', result: 'step5' };
-      if (b.closest('#' + stepMap[field])) {
+    if (label.includes(value) || value.includes(label.replace(/[^\w\s\/()]/g, '').trim())) {
+      if (stepMap[field] && b.closest('#' + stepMap[field])) {
         b.classList.add('selected');
         found = true;
       }
@@ -1749,7 +1884,7 @@ function editTrade(i) {
 }
 
 function submitTrade() {
-  // Collect step 8
+  // Collect step 10
   formData.observations = document.getElementById('inputObservations').value.trim();
   formData.mistakes     = document.getElementById('inputMistakes').value.trim();
   formData.focus        = document.getElementById('inputFocus').value.trim();
@@ -1805,6 +1940,8 @@ function renderTable() {
     return `<tr>
       <td class="date-col">${formatDate(t.date)}</td>
       <td><span class="week-badge">${t.week || '—'}</span></td>
+      <td><span style="font-size:11px;color:var(--text-dim)">${t.assetClass || '—'}</span></td>
+      <td style="color:var(--cyan);font-weight:600">${t.instrument || '—'}</td>
       <td><span class="${dirClass}">${t.direction || '—'}</span></td>
       <td>${t.setup || '—'}</td>
       <td>${t.session || '—'}</td>
